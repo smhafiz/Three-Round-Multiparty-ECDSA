@@ -10,6 +10,13 @@
 
 namespace trecdsa {
 
+struct BandwidthStats {
+    size_t round1_bytes = 0;
+    size_t round2_bytes = 0;
+    size_t round3_bytes = 0;
+    size_t total_bytes  = 0;
+};
+
 class Protocol {
 public:
     explicit Protocol(GroupParams& params);
@@ -30,6 +37,7 @@ public:
 
     size_t party_count() const noexcept;
     size_t threshold() const noexcept;
+    BandwidthStats last_bandwidth() const noexcept;
 
 private:
     void validate_inputs(const std::set<size_t>& party_set,

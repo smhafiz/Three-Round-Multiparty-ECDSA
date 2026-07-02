@@ -77,7 +77,10 @@ public:
     }
 
     size_t get_bytes() const {
-        return z_.nbits() / 8;
+        const auto mpz_b = [](const Mpz& m) { return (m.nbits() + 7) / 8; };
+        return mpz_b(z_) + mpz_b(k_)
+               + mpz_b(t1_.a()) + mpz_b(t1_.b())
+               + mpz_b(t2_.a()) + mpz_b(t2_.b());
     }
 
 private:
@@ -159,6 +162,15 @@ public:
         return valid;
     }
 
+    // Serialized: z1 + k (Mpz scalars) + t1 + t2 (QFI each = a,b) + s (compressed ECPoint)
+    size_t size_bytes(const OpenSSL::ECGroup& E) const {
+        const auto mpz_b = [](const Mpz& m) { return (m.nbits() + 7) / 8; };
+        return mpz_b(z1_) + mpz_b(k_)
+               + mpz_b(t1_.a()) + mpz_b(t1_.b())
+               + mpz_b(t2_.a()) + mpz_b(t2_.b())
+               + (E.order().nbits() + 7) / 8 + 1;
+    }
+
 private:
     static Mpz challenge_from_hash(HashAlgo& hash_algo,
                                    const OpenSSL::ECPoint&,
@@ -168,6 +180,7 @@ private:
                                    const QFI& t2) {
         return Mpz(hash_algo(ciphertext_0, ciphertext_1, t1, t2));
     }
+
 
     Mpz z1_;
     Mpz k_;

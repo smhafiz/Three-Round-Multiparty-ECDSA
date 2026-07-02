@@ -19,6 +19,7 @@ struct Protocol::Impl {
     GroupParams& params;
     OpenSSL::ECPoint sig_public_key;
     std::vector<Party> parties;
+    BandwidthStats bw{};
 };
 
 Protocol::Protocol(GroupParams& params) : impl_(std::make_unique<Impl>(params)) {}
@@ -166,6 +167,14 @@ void Protocol::run(const std::set<size_t>& party_set, const std::vector<unsigned
     for (auto& i : party_set) {
         signatures_out.push_back(impl_->parties[i - 1].handle_offline(round_three_views));
     }
+
+    const GroupParams::Impl& p = impl_->params.impl();
+    BandwidthStats bw{};
+    for (const auto& d : round_one_outputs)   bw.round1_bytes += d.size_bytes(p);
+    for (const auto& d : round_two_outputs)   bw.round2_bytes += d.size_bytes(p);
+    for (const auto& d : round_three_outputs) bw.round3_bytes += d.size_bytes(p);
+    bw.total_bytes = bw.round1_bytes + bw.round2_bytes + bw.round3_bytes;
+    impl_->bw = bw;
 }
 
 bool Protocol::verify(const std::vector<Signature>& signatures,
@@ -226,6 +235,10 @@ size_t Protocol::party_count() const noexcept {
 
 size_t Protocol::threshold() const noexcept {
     return impl_->params.threshold();
+}
+
+BandwidthStats Protocol::last_bandwidth() const noexcept {
+    return impl_->bw;
 }
 
 }

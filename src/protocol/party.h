@@ -39,6 +39,8 @@ struct RoundOneData {
                  const Commitment& com_i,
                  const CL_HSMqk_ZKAoKProof& proof)
         : id(id), enc_phi_share(share), com_i(com_i), zk_proof_cl_enc(proof) {}
+
+    size_t size_bytes(const GroupParams::Impl& p) const;
 };
 
 struct RoundOneLocalData {
@@ -100,6 +102,8 @@ struct RoundTwoData {
           zk_proof_dl(E, zk_proof_dl),
           zk_proof_dl_cl_x(E, zk_proof_dl_cl_x),
           zk_proof_dl_cl_k(E, zk_proof_dl_cl_k) {}
+
+    size_t size_bytes(const GroupParams::Impl& p) const;
 };
 
 struct RoundTwoLocalData {
@@ -126,6 +130,8 @@ struct RoundThreeData {
           c1_dec_share(c1_dec_share),
           zk_proof_pd_c0(zk_proof_pd_c0),
           zk_proof_pd_c1(zk_proof_pd_c1) {}
+
+    size_t size_bytes(const GroupParams::Impl& p) const;
 };
 
 struct RoundThreeLocalData {

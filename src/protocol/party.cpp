@@ -4,6 +4,30 @@
 
 namespace trecdsa {
 
+size_t RoundOneData::size_bytes(const GroupParams::Impl& p) const {
+    return utils::ciphertext_size_bytes(enc_phi_share)
+           + com_i.size()
+           + utils::zkaok_size_bytes_estimate(p.cl_pp, p.H);
+}
+
+size_t RoundTwoData::size_bytes(const GroupParams::Impl& p) const {
+    return utils::ciphertext_size_bytes(phi_x_share)
+           + utils::ciphertext_size_bytes(phi_k_share)
+           + utils::ecpoint_size_bytes(p.ec_group)
+           + open_i.size()
+           + utils::ecnizkproof_size_bytes(zk_proof_dl, p.ec_group)
+           + zk_proof_dl_cl_x.size_bytes(p.ec_group)
+           + zk_proof_dl_cl_k.size_bytes(p.ec_group);
+}
+
+size_t RoundThreeData::size_bytes(const GroupParams::Impl& p) const {
+    (void)p;
+    return utils::qfi_size_bytes(c0_dec_share)
+           + utils::qfi_size_bytes(c1_dec_share)
+           + zk_proof_pd_c0.get_bytes()
+           + zk_proof_pd_c1.get_bytes();
+}
+
 Party::Party(GroupParams& params,
              size_t id,
              CL_HSMqk::PublicKey class_group_public_key,
