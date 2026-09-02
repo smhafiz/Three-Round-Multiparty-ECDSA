@@ -20,6 +20,7 @@ struct Protocol::Impl {
     OpenSSL::ECPoint sig_public_key;
     std::vector<Party> parties;
     BandwidthStats bw{};
+    ObjectSizes sizes{};
 };
 
 Protocol::Protocol(GroupParams& params) : impl_(std::make_unique<Impl>(params)) {}
@@ -107,6 +108,35 @@ void Protocol::run_dkg() {
     }
 
     impl_->sig_public_key = OpenSSL::ECPoint(p.ec_group, X);
+
+    // Sample the serialized object sizes while the key material is still in
+    // scope. The CL-side values are measured from the actual keys rather than
+    // derived from the parameters: a share's bit length depends on n (through
+    // delta = n!) and on the random draw, so a parameter-derived figure would
+    // be subtly wrong -- and these numbers are reported per (n, t) cell.
+    const size_t scalar_bytes = (p.ec_group.order().nbits() + 7) / 8;
+    impl_->sizes.signature      = 2 * scalar_bytes;   // r || s
+    impl_->sizes.ec_public_key  = utils::ecpoint_size_bytes(p.ec_group);
+    impl_->sizes.ec_key_share   = scalar_bytes;
+    impl_->sizes.enc_public_key = utils::qfi_size_bytes(pk.elt());
+    impl_->sizes.enc_key_share  = utils::mpz_size_bytes(sk_list[0]);
+
+    // A representative ciphertext under the shared public key, built the same
+    // way the protocol builds one (Party::handle_round_one draws r from
+    // encrypt_randomness_bound and calls the explicit-randomness overload), so
+    // the reported size describes the ciphertexts this protocol actually sends.
+    // A QFI coefficient's byte length depends on the value drawn, so this is
+    // one sample from a narrow distribution (a couple of bytes wide), not a
+    // constant -- the same "representative, not a statistic" treatment
+    // bandwidth gets.
+    const CL_HSMqk::ClearText sample_msg(p.cl_pp, randgen);
+    const Mpz sample_r(randgen.random_mpz(p.cl_pp.encrypt_randomness_bound()));
+    const CL_HSMqk::CipherText sample_ct = p.cl_pp.encrypt(pk, sample_msg, sample_r);
+    impl_->sizes.enc_ciphertext = utils::ciphertext_size_bytes(sample_ct);
+}
+
+ObjectSizes Protocol::object_sizes() const noexcept {
+    return impl_->sizes;
 }
 
 std::vector<Signature> Protocol::run(const std::set<size_t>& party_set,

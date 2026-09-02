@@ -17,6 +17,19 @@ struct BandwidthStats {
     size_t total_bytes  = 0;
 };
 
+// Serialized sizes of the individual objects a deployment would store or send.
+// Sampled from the key material produced by run_dkg(), so the CL-side figures
+// reflect actual values (whose bit lengths vary a little with n and with the
+// random draw) rather than parameter-derived bounds.
+struct ObjectSizes {
+    size_t signature       = 0;  // r || s
+    size_t ec_public_key   = 0;  // compressed point
+    size_t ec_key_share    = 0;  // one party's secret EC share
+    size_t enc_public_key  = 0;  // shared CL-HSM public key (a QFI)
+    size_t enc_key_share   = 0;  // one party's share of the CL secret
+    size_t enc_ciphertext  = 0;  // one CL-HSM ciphertext (two QFIs)
+};
+
 class Protocol {
 public:
     explicit Protocol(GroupParams& params);
@@ -38,6 +51,9 @@ public:
     size_t party_count() const noexcept;
     size_t threshold() const noexcept;
     BandwidthStats last_bandwidth() const noexcept;
+
+    // Valid only after run_dkg(); zero-initialized before it.
+    ObjectSizes object_sizes() const noexcept;
 
 private:
     void validate_inputs(const std::set<size_t>& party_set,

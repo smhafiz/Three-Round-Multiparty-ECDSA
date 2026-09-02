@@ -3,6 +3,7 @@ project(Three-Round-Multiparty-ECDSA LANGUAGES CXX)
 
 option(TRECDSA_BUILD_TESTS "Build tests" ON)
 option(TRECDSA_BUILD_BENCH "Build benchmark" OFF)
+option(TRECDSA_BUILD_EVAL "Build the schema-emitting eval app (tss-eval-harness)" OFF)
 option(TRECDSA_WARNINGS_AS_ERRORS "Treat warnings as errors for project targets" OFF)
 option(TRECDSA_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
@@ -86,4 +87,10 @@ if(TRECDSA_BUILD_BENCH)
     add_executable(trecdsa_bench apps/bench/main.cpp)
     target_link_libraries(trecdsa_bench PRIVATE trecdsa_core trecdsa_project_options)
     set_target_properties(trecdsa_bench PROPERTIES OUTPUT_NAME trecdsa-bench)
+endif()
+
+if(TRECDSA_BUILD_EVAL)
+    add_executable(trecdsa_eval apps/eval/main.cpp)
+    target_link_libraries(trecdsa_eval PRIVATE trecdsa_core trecdsa_project_options)
+    set_target_properties(trecdsa_eval PROPERTIES OUTPUT_NAME trecdsa-eval)
 endif()
